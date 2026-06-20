@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Customer, DuesPayment, Invoice, PaymentMode, User, Role
-from app.schemas import CustomerCreate, CustomerPhotoUpdate, DuesPaymentCreate
+from app.schemas import CustomerCreate, CustomerUpdate, CustomerPhotoUpdate, DuesPaymentCreate
 from app.auth import get_current_user, require_roles
 
 router = APIRouter(prefix="/customers", tags=["customers"])
@@ -83,6 +83,30 @@ def get_customer(
     customer = session.get(Customer, customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+    return customer
+
+
+@router.patch("/{customer_id}")
+def update_customer(
+    customer_id: int,
+    payload: CustomerUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_roles(Role.owner)),
+):
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    update_data = payload.dict(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    for key, value in update_data.items():
+        setattr(customer, key, value)
+
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
     return customer
 
 

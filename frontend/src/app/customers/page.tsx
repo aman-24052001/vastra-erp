@@ -75,6 +75,11 @@ function CustomersContent() {
   const [error, setError] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const newPhotoInputRef = useRef<HTMLInputElement>(null);
   const ledgerPhotoInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,6 +107,7 @@ function CustomersContent() {
 
   useEffect(() => {
     if (selectedId) loadLedger(selectedId);
+    setEditing(false);
   }, [selectedId, loadLedger]);
 
   const handleNewPhotoSelected = async (file: File | undefined) => {
@@ -143,6 +149,29 @@ function CustomersContent() {
       setError(e instanceof ApiError ? e.message : "Could not update photo");
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handleStartEdit = () => {
+    if (!ledger) return;
+    setEditName(ledger.customer.name);
+    setEditPhone(ledger.customer.phone);
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!session || !selectedId) return;
+    setSavingEdit(true);
+    setError("");
+    try {
+      await api.updateCustomer(session.token, selectedId, { name: editName, phone: editPhone });
+      setEditing(false);
+      await loadLedger(selectedId);
+      await loadCustomers();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not update customer");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -268,17 +297,53 @@ function CustomersContent() {
         ) : (
           <div>
             <div className="brutal-panel p-5 mb-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <Avatar photo={ledger.customer.photo} name={ledger.customer.name} size={56} />
-                <div>
-                  <h2 className="text-xl font-extrabold">{ledger.customer.name}</h2>
-                  <p className="text-sm opacity-70">{ledger.customer.phone}</p>
-                  {ledger.aging && (
-                    <span className={`brutal-badge mt-1 ${agingBadgeClasses(ledger.aging.urgency)}`}>
-                      {ledger.aging.label}
-                    </span>
-                  )}
-                </div>
+                {editing ? (
+                  <div className="flex-1 space-y-2">
+                    <input
+                      className="brutal-input w-full text-sm"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Name"
+                    />
+                    <input
+                      className="brutal-input w-full text-sm"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="Phone"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={savingEdit}
+                        className="brutal-btn-accent px-3 py-1 text-xs disabled:opacity-50"
+                      >
+                        {savingEdit ? "Saving…" : "Save"}
+                      </button>
+                      <button onClick={() => setEditing(false)} className="brutal-btn px-3 py-1 text-xs">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-extrabold">{ledger.customer.name}</h2>
+                      {session?.role === "owner" && (
+                        <button onClick={handleStartEdit} className="text-xs underline opacity-70 hover:opacity-100">
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm opacity-70">{ledger.customer.phone}</p>
+                    {ledger.aging && (
+                      <span className={`brutal-badge mt-1 ${agingBadgeClasses(ledger.aging.urgency)}`}>
+                        {ledger.aging.label}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase font-bold opacity-70">Outstanding</p>

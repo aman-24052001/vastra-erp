@@ -183,6 +183,12 @@ export const api = {
       body: JSON.stringify({ name, phone, photo: photo ?? null }),
     }, token),
 
+  updateCustomer: (token: string, customerId: number, payload: { name?: string; phone?: string }) =>
+    request<Customer>(`/customers/${customerId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }, token),
+
   updateCustomerPhoto: (token: string, customerId: number, photo: string) =>
     request<Customer>(`/customers/${customerId}/photo`, {
       method: "PATCH",

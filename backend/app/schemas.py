@@ -63,6 +63,11 @@ class CustomerCreate(BaseModel):
     photo: Optional[str] = None
 
 
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+
+
 class CustomerPhotoUpdate(BaseModel):
     photo: str
 
