@@ -8,8 +8,8 @@ import { ApiError } from "@/lib/api";
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("owner@anushreevastralay.in");
-  const [password, setPassword] = useState("owner123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-xs opacity-60 mt-6">
-          Demo: owner@anushreevastralay.in / owner123
+          Owner/staff accounts are provisioned separately — contact your admin for access.
         </p>
       </div>
     </div>

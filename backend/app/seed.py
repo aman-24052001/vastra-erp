@@ -4,7 +4,19 @@ Populates the DB with a believable saree-shop dataset — an owner login,
 a handful of products/variants, customers (some with dues), and a few
 historical invoices — so the dashboard and reports don't look empty
 on first run.
+
+Login credentials are NEVER hardcoded here. Set them via env vars:
+  VASTRA_OWNER_EMAIL, VASTRA_OWNER_PASSWORD
+  VASTRA_STAFF_EMAIL, VASTRA_STAFF_PASSWORD
+
+If a password env var isn't set, a random one is generated and printed
+ONCE to this script's output (visible only in your own terminal / your
+private Render build logs — never committed to git).
 """
+import os
+import secrets
+import string
+
 from sqlmodel import Session, select
 
 from app.database import engine, create_db_and_tables
@@ -16,6 +28,22 @@ from app.auth import hash_password
 from app.routers.billing import CGST_RATE, SGST_RATE
 
 
+def _generate_password(length: int = 16) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _resolve_credential(env_var: str, default: str | None = None, generate: bool = False) -> str:
+    value = os.environ.get(env_var)
+    if value:
+        return value
+    if default is not None:
+        return default
+    generated = _generate_password()
+    print(f"[seed] {env_var} not set — generated a random value: {generated}")
+    return generated
+
+
 def seed():
     create_db_and_tables()
     with Session(engine) as session:
@@ -23,16 +51,21 @@ def seed():
             print("Database already seeded — skipping.")
             return
 
+        owner_email = _resolve_credential("VASTRA_OWNER_EMAIL", default="owner@anushreevastralay.in")
+        owner_password = _resolve_credential("VASTRA_OWNER_PASSWORD", generate=True)
+        staff_email = _resolve_credential("VASTRA_STAFF_EMAIL", default="staff@anushreevastralay.in")
+        staff_password = _resolve_credential("VASTRA_STAFF_PASSWORD", generate=True)
+
         owner = User(
             name="Anushree",
-            email="owner@anushreevastralay.in",
-            hashed_password=hash_password("owner123"),
+            email=owner_email,
+            hashed_password=hash_password(owner_password),
             role=Role.owner,
         )
         staff = User(
             name="Shop Staff",
-            email="staff@anushreevastralay.in",
-            hashed_password=hash_password("staff123"),
+            email=staff_email,
+            hashed_password=hash_password(staff_password),
             role=Role.staff,
         )
         session.add(owner)
@@ -99,8 +132,10 @@ def seed():
         session.commit()
 
         print("Seed complete.")
-        print("Owner login: owner@anushreevastralay.in / owner123")
-        print("Staff login: staff@anushreevastralay.in / staff123")
+        print(f"Owner login: {owner_email}")
+        print(f"Staff login: {staff_email}")
+        print("(Passwords are not printed here unless they were auto-generated above — "
+              "they're whatever you set in VASTRA_OWNER_PASSWORD / VASTRA_STAFF_PASSWORD.)")
 
 
 if __name__ == "__main__":

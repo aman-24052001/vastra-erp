@@ -1,7 +1,7 @@
 # Vastra ERP
 
-**Live demo (frontend only):** https://aman-24052001.github.io/vastra-erp/
-> Static export on GitHub Pages — UI loads, but data calls will fail until the backend is hosted somewhere public (see "Running locally" below, or ask for backend deployment next). `NEXT_PUBLIC_API_URL` is currently baked in as `http://localhost:8000`.
+**Live demo:** https://aman-24052001.github.io/vastra-erp/ (frontend) → https://vastra-erp.onrender.com (backend, free tier — first request after idle takes 30–50s to wake up)
+> No login credentials are published here. See "Login credentials" below for how owner/staff accounts are provisioned.
 
 Apparel retail ERP — variant-level inventory (fabric × color × design × size), GST-compliant billing, and a customer credit/dues ledger. Built around how saree/apparel retail actually operates, not a generic products-and-cart app.
 
@@ -59,12 +59,18 @@ npm run dev
 
 Visit http://localhost:3000 — it will redirect to `/login`.
 
-### Demo logins (created by the seed script)
+### Login credentials
 
-| Role  | Email                              | Password  |
-|-------|-------------------------------------|-----------|
-| Owner | owner@anushreevastralay.in          | owner123  |
-| Staff | staff@anushreevastralay.in          | staff123  |
+Never hardcoded in source. Set these env vars before running the seed script (locally or on your host):
+
+```
+VASTRA_OWNER_EMAIL=owner@yourshop.example
+VASTRA_OWNER_PASSWORD=<a strong password you choose>
+VASTRA_STAFF_EMAIL=staff@yourshop.example
+VASTRA_STAFF_PASSWORD=<a strong password you choose>
+```
+
+If you skip the password vars, the seed script generates a random one and prints it once to its own output (your terminal or your private build logs) — it is never committed to git or shown in the UI.
 
 ## Project structure
 
