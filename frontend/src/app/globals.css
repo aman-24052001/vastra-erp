@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf6ec;
+  --foreground: #14120f;
+  --ink: #14120f;
+  --cream: #faf6ec;
+  --cream-panel: #fffdf7;
+  --accent: #ff4d1c;
+  --accent-deep: #d93b10;
+  --ok: #1f7a3d;
+  --warn: #b8860b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-cream-panel: var(--cream-panel);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Reusable neo-brutalist primitives */
+.brutal-panel {
+  background: var(--cream-panel);
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.brutal-btn {
+  background: var(--ink);
+  color: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  transition: transform 0.1s ease;
+}
+
+.brutal-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--accent);
+}
+
+.brutal-btn:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 var(--accent);
+}
+
+.brutal-btn-accent {
+  background: var(--accent);
+  color: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.brutal-btn-accent:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.brutal-input {
+  background: var(--cream-panel);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  padding: 0.5rem 0.75rem;
+}
+
+.brutal-input:focus {
+  outline: none;
+  box-shadow: 3px 3px 0 var(--accent);
+}
+
+.brutal-badge {
+  border: 2px solid var(--ink);
+  padding: 0.1rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: inline-block;
+}
