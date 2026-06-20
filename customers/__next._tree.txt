@@ -1,3 +1,3 @@
-:HL["/vastra-erp/_next/static/chunks/3pxih0a42-s59.css","style"]
+:HL["/vastra-erp/_next/static/chunks/3pl6euxhyq-cu.css","style"]
 :HL["https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"customers","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"Pz5m6KjBXDnhxkgT-JamA"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"customers","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"FDxGy0Ay2mRLKhlmSy3bL"}

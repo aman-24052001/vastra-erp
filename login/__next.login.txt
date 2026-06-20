@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[39756,["/vastra-erp/_next/static/chunks/0srgilh1kyfr9.js","/vastra-erp/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
-3:I[37457,["/vastra-erp/_next/static/chunks/0srgilh1kyfr9.js","/vastra-erp/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+2:I[39756,["/vastra-erp/_next/static/chunks/31lvzyh2-r501.js","/vastra-erp/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
+3:I[37457,["/vastra-erp/_next/static/chunks/31lvzyh2-r501.js","/vastra-erp/_next/static/chunks/14mrh2-p_w84d.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"Pz5m6KjBXDnhxkgT-JamA"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"FDxGy0Ay2mRLKhlmSy3bL"}
