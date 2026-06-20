@@ -1,14 +1,47 @@
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Customer, DuesPayment, Invoice, User, Role
-from app.schemas import CustomerCreate, DuesPaymentCreate
+from app.models import Customer, DuesPayment, Invoice, PaymentMode, User, Role
+from app.schemas import CustomerCreate, CustomerPhotoUpdate, DuesPaymentCreate
 from app.auth import get_current_user, require_roles
 
 router = APIRouter(prefix="/customers", tags=["customers"])
+
+
+def _compute_aging(session: Session, customer_id: int, outstanding_dues: float):
+    """Days since the customer's last relevant activity, plus a label and an
+    urgency bucket (ok / warn / urgent) for UI colour-coding. Mirrors the
+    aging logic from the anushree-vastralaya khata app: use the last payment
+    date if one exists, otherwise fall back to the last credit sale date."""
+    if outstanding_dues <= 0:
+        return None
+
+    last_payment = session.exec(
+        select(DuesPayment).where(DuesPayment.customer_id == customer_id).order_by(DuesPayment.created_at.desc())
+    ).first()
+    last_credit_sale = session.exec(
+        select(Invoice)
+        .where(Invoice.customer_id == customer_id, Invoice.payment_mode == PaymentMode.credit)
+        .order_by(Invoice.created_at.desc())
+    ).first()
+
+    ref_date, basis = None, None
+    if last_payment:
+        ref_date, basis = last_payment.created_at, "payment"
+    elif last_credit_sale:
+        ref_date, basis = last_credit_sale.created_at, "sale"
+
+    if not ref_date:
+        return None
+
+    days = (datetime.utcnow() - ref_date).days
+    urgency = "ok" if days < 14 else ("warn" if days < 30 else "urgent")
+    label = f"Last payment {days}d ago" if basis == "payment" else f"Owing for {days}d"
+    return {"days": days, "label": label, "urgency": urgency}
 
 
 @router.get("")
@@ -21,7 +54,11 @@ def list_customers(
     if search:
         s = search.lower()
         customers = [c for c in customers if s in c.name.lower() or s in c.phone]
-    return customers
+
+    result = []
+    for c in customers:
+        result.append({**c.dict(), "aging": _compute_aging(session, c.id, c.total_dues)})
+    return result
 
 
 @router.post("")
@@ -49,6 +86,24 @@ def get_customer(
     return customer
 
 
+@router.patch("/{customer_id}/photo")
+def update_customer_photo(
+    customer_id: int,
+    payload: CustomerPhotoUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_roles(Role.owner, Role.staff)),
+):
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    customer.photo = payload.photo
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
+    return customer
+
+
 @router.get("/{customer_id}/ledger")
 def get_customer_ledger(
     customer_id: int,
@@ -69,6 +124,7 @@ def get_customer_ledger(
     return {
         "customer": customer,
         "outstanding_dues": customer.total_dues,
+        "aging": _compute_aging(session, customer_id, customer.total_dues),
         "invoices": invoices,
         "payments": payments,
     }

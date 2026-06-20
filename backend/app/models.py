@@ -73,6 +73,7 @@ class Customer(SQLModel, table=True):
     name: str
     phone: str = Field(index=True)
     total_dues: float = Field(default=0.0)
+    photo: Optional[str] = Field(default=None)  # base64 data URL, client-compressed before upload
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -60,6 +60,11 @@ class StockMovementCreate(BaseModel):
 class CustomerCreate(BaseModel):
     name: str
     phone: str
+    photo: Optional[str] = None
+
+
+class CustomerPhotoUpdate(BaseModel):
+    photo: str
 
 
 class DuesPaymentCreate(BaseModel):

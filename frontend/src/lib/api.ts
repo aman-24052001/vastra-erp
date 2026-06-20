@@ -63,12 +63,20 @@ export interface Product {
   category: string;
 }
 
+export interface AgingInfo {
+  days: number;
+  label: string;
+  urgency: "ok" | "warn" | "urgent";
+}
+
 export interface Customer {
   id: number;
   name: string;
   phone: string;
   total_dues: number;
+  photo: string | null;
   created_at: string;
+  aging?: AgingInfo | null;
 }
 
 export interface Invoice {
@@ -169,16 +177,23 @@ export const api = {
     return request<Customer[]>(`/customers${qs}`, {}, token);
   },
 
-  createCustomer: (token: string, name: string, phone: string) =>
+  createCustomer: (token: string, name: string, phone: string, photo?: string | null) =>
     request<Customer>("/customers", {
       method: "POST",
-      body: JSON.stringify({ name, phone }),
+      body: JSON.stringify({ name, phone, photo: photo ?? null }),
+    }, token),
+
+  updateCustomerPhoto: (token: string, customerId: number, photo: string) =>
+    request<Customer>(`/customers/${customerId}/photo`, {
+      method: "PATCH",
+      body: JSON.stringify({ photo }),
     }, token),
 
   getCustomerLedger: (token: string, customerId: number) =>
     request<{
       customer: Customer;
       outstanding_dues: number;
+      aging: AgingInfo | null;
       invoices: Invoice[];
       payments: { id: number; amount: number; created_at: string }[];
     }>(`/customers/${customerId}/ledger`, {}, token),

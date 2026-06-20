@@ -1,16 +1,61 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import RequireAuth from "@/components/RequireAuth";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/lib/auth-context";
-import { api, Customer, Invoice, ApiError } from "@/lib/api";
+import { api, Customer, Invoice, AgingInfo, ApiError } from "@/lib/api";
+import { compressImage } from "@/lib/image";
+
+const SHOP_NAME = "Anushree Vastralaya";
 
 interface Ledger {
   customer: Customer;
   outstanding_dues: number;
+  aging: AgingInfo | null;
   invoices: Invoice[];
   payments: { id: number; amount: number; created_at: string }[];
+}
+
+function agingBadgeClasses(urgency: AgingInfo["urgency"]) {
+  if (urgency === "urgent") return "bg-accent text-cream border-ink";
+  if (urgency === "warn") return "bg-warn text-cream border-ink";
+  return "bg-ok text-cream border-ink";
+}
+
+function waReminderUrl(phone: string, name: string, dues: number) {
+  const amt = dues.toLocaleString("en-IN");
+  const msg =
+    `Namaste ${name} ji,\n\n` +
+    `Your outstanding balance is ₹${amt}.\n` +
+    `Kindly make the payment at your earliest convenience.\n\n` +
+    `Thank you,\n${SHOP_NAME}`;
+  return `https://wa.me/91${phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+}
+
+function Avatar({ photo, name, size = 40 }: { photo: string | null; name: string; size?: number }) {
+  if (photo) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={photo}
+        alt={name}
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+        className="object-cover border-2 border-ink"
+      />
+    );
+  }
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="border-2 border-ink bg-accent text-cream flex items-center justify-center font-extrabold"
+    >
+      {initial}
+    </div>
+  );
 }
 
 function CustomersContent() {
@@ -22,11 +67,16 @@ function CustomersContent() {
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [newPhoto, setNewPhoto] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [ledger, setLedger] = useState<Ledger | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [error, setError] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const newPhotoInputRef = useRef<HTMLInputElement>(null);
+  const ledgerPhotoInputRef = useRef<HTMLInputElement>(null);
 
   const loadCustomers = useCallback(async () => {
     if (!session) return;
@@ -54,19 +104,45 @@ function CustomersContent() {
     if (selectedId) loadLedger(selectedId);
   }, [selectedId, loadLedger]);
 
+  const handleNewPhotoSelected = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      setNewPhoto(await compressImage(file));
+    } catch {
+      setError("Could not process that photo — try a different one.");
+    }
+  };
+
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) return;
     setError("");
     try {
-      const c = await api.createCustomer(session.token, newName, newPhone);
+      const c = await api.createCustomer(session.token, newName, newPhone, newPhoto);
       setNewName("");
       setNewPhone("");
+      setNewPhoto(null);
       setShowForm(false);
       await loadCustomers();
       setSelectedId(c.id);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not create customer");
+    }
+  };
+
+  const handleLedgerPhotoSelected = async (file: File | undefined) => {
+    if (!file || !session || !selectedId) return;
+    setUploadingPhoto(true);
+    setError("");
+    try {
+      const photo = await compressImage(file);
+      await api.updateCustomerPhoto(session.token, selectedId, photo);
+      await loadLedger(selectedId);
+      await loadCustomers();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not update photo");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -97,21 +173,43 @@ function CustomersContent() {
 
         {showForm && (
           <form onSubmit={handleAddCustomer} className="brutal-panel p-4 mb-4 space-y-2">
+            <div className="flex items-center gap-3">
+              <Avatar photo={newPhoto} name={newName || "?"} size={48} />
+              <div className="flex-1 space-y-2">
+                <input
+                  required
+                  placeholder="Name"
+                  className="brutal-input w-full"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+                <input
+                  required
+                  placeholder="Phone"
+                  className="brutal-input w-full"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                />
+              </div>
+            </div>
+
             <input
-              required
-              placeholder="Name"
-              className="brutal-input w-full"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              ref={newPhotoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleNewPhotoSelected(e.target.files?.[0])}
             />
-            <input
-              required
-              placeholder="Phone"
-              className="brutal-input w-full"
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-            />
-            <button type="submit" className="brutal-btn w-full py-1.5 text-sm">Save</button>
+            <button
+              type="button"
+              onClick={() => newPhotoInputRef.current?.click()}
+              className="brutal-btn w-full py-1.5 text-xs"
+            >
+              📷 {newPhoto ? "Retake Photo" : "Take Photo"}
+            </button>
+
+            <button type="submit" className="brutal-btn-accent w-full py-1.5 text-sm">Save</button>
           </form>
         )}
 
@@ -127,15 +225,33 @@ function CustomersContent() {
             <button
               key={c.id}
               onClick={() => setSelectedId(c.id)}
-              className={`block w-full text-left p-3 border-b border-ink/20 last:border-b-0 ${
+              className={`flex items-center gap-3 w-full text-left p-3 border-b border-ink/20 last:border-b-0 ${
                 selectedId === c.id ? "bg-accent text-cream" : "hover:bg-ink/5"
               }`}
             >
-              <p className="font-bold text-sm">{c.name}</p>
-              <p className="text-xs opacity-80">{c.phone}</p>
-              {c.total_dues > 0 && (
-                <p className="text-xs font-bold mt-0.5">Dues: ₹{c.total_dues.toLocaleString()}</p>
-              )}
+              <Avatar photo={c.photo} name={c.name} />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm truncate">{c.name}</p>
+                <p className="text-xs opacity-80">{c.phone}</p>
+                {c.total_dues > 0 && (
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-xs font-bold">₹{c.total_dues.toLocaleString()}</span>
+                    {c.aging && (
+                      <span className={`brutal-badge ${agingBadgeClasses(c.aging.urgency)}`}>
+                        {c.aging.days}d
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <a
+                href={`tel:${c.phone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="brutal-btn px-2 py-1.5 text-sm shrink-0"
+                title="Call"
+              >
+                📞
+              </a>
             </button>
           ))}
           {customers.length === 0 && <p className="p-4 text-sm opacity-60">No customers yet.</p>}
@@ -151,10 +267,18 @@ function CustomersContent() {
           </div>
         ) : (
           <div>
-            <div className="brutal-panel p-5 mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-extrabold">{ledger.customer.name}</h2>
-                <p className="text-sm opacity-70">{ledger.customer.phone}</p>
+            <div className="brutal-panel p-5 mb-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Avatar photo={ledger.customer.photo} name={ledger.customer.name} size={56} />
+                <div>
+                  <h2 className="text-xl font-extrabold">{ledger.customer.name}</h2>
+                  <p className="text-sm opacity-70">{ledger.customer.phone}</p>
+                  {ledger.aging && (
+                    <span className={`brutal-badge mt-1 ${agingBadgeClasses(ledger.aging.urgency)}`}>
+                      {ledger.aging.label}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase font-bold opacity-70">Outstanding</p>
@@ -162,6 +286,41 @@ function CustomersContent() {
                   ₹{ledger.outstanding_dues.toLocaleString()}
                 </p>
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <a href={`tel:${ledger.customer.phone}`} className="brutal-btn px-4 py-2 text-sm flex-1 text-center">
+                📞 Call
+              </a>
+              {ledger.outstanding_dues > 0 && (
+                <a
+                  href={waReminderUrl(ledger.customer.phone, ledger.customer.name, ledger.outstanding_dues)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="brutal-btn-accent px-4 py-2 text-sm flex-1 text-center"
+                >
+                  💬 WhatsApp Reminder
+                </a>
+              )}
+              {canEdit && (
+                <>
+                  <input
+                    ref={ledgerPhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => handleLedgerPhotoSelected(e.target.files?.[0])}
+                  />
+                  <button
+                    onClick={() => ledgerPhotoInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="brutal-btn px-4 py-2 text-sm flex-1 disabled:opacity-50"
+                  >
+                    {uploadingPhoto ? "Uploading…" : `📷 ${ledger.customer.photo ? "Update" : "Add"} Photo`}
+                  </button>
+                </>
+              )}
             </div>
 
             {canEdit && ledger.outstanding_dues > 0 && (
