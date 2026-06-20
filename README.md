@@ -17,6 +17,22 @@ Full product spec: see [`docs/PRD.md`](./docs/PRD.md).
 - **Dashboard** — today's sales, low-stock count, top dues, top-selling variants
 - **Auth** — JWT login, role-gated endpoints (first registered user becomes the owner)
 
+## Deploying the backend (Render, free tier)
+
+A Blueprint (`render.yaml`) is already in the repo, so this is a 2-minute click-through:
+
+1. [render.com](https://render.com) → **New +** → **Blueprint**
+2. Connect the `aman-24052001/vastra-erp` repo
+3. Render reads `render.yaml` automatically — review and click **Apply**
+4. Wait for the first build (installs deps + runs the seed script)
+5. Copy the resulting URL (looks like `https://vastra-erp-backend.onrender.com`)
+
+**Free tier caveats:**
+- The service spins down after ~15 min idle; the first request after that takes 30–50s to wake up (cold start) — normal for Render free, not a bug.
+- SQLite lives on ephemeral disk — data resets on every redeploy. Fine for a portfolio demo; the seed script repopulates it automatically each build.
+
+Once deployed, the frontend's `NEXT_PUBLIC_API_URL` needs to point at that Render URL and be rebuilt/redeployed to GitHub Pages — happy to do that the moment you share the URL.
+
 ## Running locally
 
 ### Backend (FastAPI)
