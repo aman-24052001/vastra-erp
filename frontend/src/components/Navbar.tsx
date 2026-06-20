@@ -11,6 +11,8 @@ const LINKS = [
   { href: "/customers", label: "Customers" },
 ];
 
+const OWNER_LINKS = [{ href: "/team", label: "Team" }];
+
 export default function Navbar() {
   const { session, logout } = useAuth();
   const pathname = usePathname();
@@ -28,7 +30,7 @@ export default function Navbar() {
         </div>
 
         <nav className="flex items-center gap-1 flex-wrap">
-          {LINKS.map((link) => (
+          {[...LINKS, ...(session.role === "owner" ? OWNER_LINKS : [])].map((link) => (
             <Link
               key={link.href}
               href={link.href}

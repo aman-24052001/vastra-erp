@@ -25,11 +25,30 @@ class TokenResponse(BaseModel):
     name: str
 
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: Role = Role.staff
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[Role] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
+
+
 # ---------- Inventory ----------
 
 class ProductCreate(BaseModel):
     name: str
     category: str = "saree"
+
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
 
 
 class VariantCreate(BaseModel):
@@ -44,8 +63,13 @@ class VariantCreate(BaseModel):
 
 
 class VariantUpdate(BaseModel):
+    fabric: Optional[str] = None
+    color: Optional[str] = None
+    design_code: Optional[str] = None
+    size: Optional[str] = None
     price: Optional[float] = None
     low_stock_threshold: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class StockMovementCreate(BaseModel):

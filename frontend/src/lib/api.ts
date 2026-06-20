@@ -55,6 +55,15 @@ export interface Variant {
   price: number;
   stock_qty: number;
   low_stock_threshold: number;
+  is_active: boolean;
+}
+
+export interface UserAccount {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  is_active: boolean;
 }
 
 export interface Product {
@@ -128,10 +137,11 @@ export const api = {
   listProducts: (token: string) =>
     request<Product[]>("/inventory/products", {}, token),
 
-  listVariants: (token: string, params?: { lowStockOnly?: boolean; search?: string }) => {
+  listVariants: (token: string, params?: { lowStockOnly?: boolean; search?: string; showInactive?: boolean }) => {
     const qs = new URLSearchParams();
     if (params?.lowStockOnly) qs.set("low_stock_only", "true");
     if (params?.search) qs.set("search", params.search);
+    if (params?.showInactive) qs.set("show_inactive", "true");
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return request<Variant[]>(`/inventory/variants${suffix}`, {}, token);
   },
@@ -140,6 +150,12 @@ export const api = {
     request<Product>("/inventory/products", {
       method: "POST",
       body: JSON.stringify({ name, category }),
+    }, token),
+
+  updateProduct: (token: string, productId: number, payload: { name?: string; category?: string }) =>
+    request<Product>(`/inventory/products/${productId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     }, token),
 
   createVariant: (
@@ -170,6 +186,24 @@ export const api = {
     request("/inventory/stock-movements", {
       method: "POST",
       body: JSON.stringify({ variant_id, type, quantity, reference }),
+    }, token),
+
+  updateVariant: (
+    token: string,
+    variantId: number,
+    payload: Partial<{
+      fabric: string;
+      color: string;
+      design_code: string;
+      size: string;
+      price: number;
+      low_stock_threshold: number;
+      is_active: boolean;
+    }>
+  ) =>
+    request<Variant>(`/inventory/variants/${variantId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     }, token),
 
   listCustomers: (token: string, search?: string) => {
@@ -223,6 +257,28 @@ export const api = {
   ) =>
     request<Invoice>("/billing/invoices", {
       method: "POST",
+      body: JSON.stringify(payload),
+    }, token),
+
+  listUsers: (token: string) =>
+    request<UserAccount[]>("/auth/users", {}, token),
+
+  createUser: (
+    token: string,
+    payload: { name: string; email: string; password: string; role: Role }
+  ) =>
+    request<UserAccount>("/auth/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, token),
+
+  updateUser: (
+    token: string,
+    userId: number,
+    payload: Partial<{ name: string; role: Role; is_active: boolean; password: string }>
+  ) =>
+    request<UserAccount>(`/auth/users/${userId}`, {
+      method: "PATCH",
       body: JSON.stringify(payload),
     }, token),
 };

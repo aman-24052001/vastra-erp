@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Product, Variant, StockMovement, MovementType, User, Role
-from app.schemas import ProductCreate, VariantCreate, VariantUpdate, StockMovementCreate
+from app.schemas import ProductCreate, ProductUpdate, VariantCreate, VariantUpdate, StockMovementCreate
 from app.auth import get_current_user, require_roles
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -31,17 +31,45 @@ def create_product(
     return product
 
 
+@router.patch("/products/{product_id}")
+def update_product(
+    product_id: int,
+    payload: ProductUpdate,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_roles(Role.owner, Role.staff)),
+):
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    update_data = payload.dict(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    for key, value in update_data.items():
+        setattr(product, key, value)
+
+    session.add(product)
+    session.commit()
+    session.refresh(product)
+    return product
+
+
 # ---------- Variants ----------
 
 @router.get("/variants")
 def list_variants(
     low_stock_only: bool = False,
     search: Optional[str] = None,
+    show_inactive: bool = False,
     session: Session = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
     statement = select(Variant)
     variants = session.exec(statement).all()
+
+    if not show_inactive:
+        variants = [v for v in variants if v.is_active]
 
     if search:
         s = search.lower()

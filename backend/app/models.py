@@ -30,6 +30,7 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     hashed_password: str
     role: Role = Field(default=Role.staff)
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -53,6 +54,7 @@ class Variant(SQLModel, table=True):
     price: float
     stock_qty: int = Field(default=0)
     low_stock_threshold: int = Field(default=3)
+    is_active: bool = Field(default=True)  # discontinued variants are hidden, not deleted
 
     product: Optional[Product] = Relationship(back_populates="variants")
 
