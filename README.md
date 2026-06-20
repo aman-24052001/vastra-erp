@@ -1,5 +1,8 @@
 # Vastra ERP
 
+**Live demo (frontend only):** https://aman-24052001.github.io/vastra-erp/
+> Static export on GitHub Pages — UI loads, but data calls will fail until the backend is hosted somewhere public (see "Running locally" below, or ask for backend deployment next). `NEXT_PUBLIC_API_URL` is currently baked in as `http://localhost:8000`.
+
 Apparel retail ERP — variant-level inventory (fabric × color × design × size), GST-compliant billing, and a customer credit/dues ledger. Built around how saree/apparel retail actually operates, not a generic products-and-cart app.
 
 **Stack:** FastAPI (Python) + SQLModel/SQLite backend · Next.js 16 + TypeScript + Tailwind CSS v4 frontend · JWT auth with role-based access (owner / staff / accountant).
